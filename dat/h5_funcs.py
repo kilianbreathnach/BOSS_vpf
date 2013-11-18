@@ -4,9 +4,10 @@ import h5py as h5
 
 def mk_h5(infile, outfile, dset_name, **kwargs):
 
-    cols = kwargs.clearpop("usecols", None)
+    rows = kwargs.pop("skiprows", 0)
+    cols = kwargs.pop("usecols", None)
 
-    dat = np.loadtxt(infile, usecols=cols)
+    dat = np.loadtxt(infile, skiprows=rows, usecols=cols)
 
     f = h5.File(outfile, 'a')
 

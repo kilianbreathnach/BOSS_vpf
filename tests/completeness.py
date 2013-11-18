@@ -6,7 +6,7 @@ from astropy.cosmology import Planck13, WMAP5
 from scipy.spatial import cKDTree
 
 
-Nsph = 10000
+Nsph = 1000000
 norm = 1. / Nsph
 
 
@@ -116,7 +116,7 @@ for r_i, r in enumerate(rad):
 
             bad_vol += 1.5 * (bad_r_deg / R) ** 2 * np.sqrt(1.0 - l ** 2)
 
-        f_r = open("./test_dat/NGC/CMASS/completeness_100k/volfrac_rad{0}.dat".
+        f_r = open("./test_dat/NGC/CMASS/completeness_1mil/volfrac_rad{0}.dat".
                        format(r), 'a')
         f_r.write("{0}\n".format(bad_vol))
         f_r.close()
