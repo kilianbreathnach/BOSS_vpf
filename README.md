@@ -1,12 +1,11 @@
 Finding the Void Probability Function of galaxies in BOSS data (CMASS and LOWZ)
-===============================================================================
+-------------------------------------------------------------------------------
 
 Kilian Walsh and Jeremy Tinker
 (arxiv article: ...)
 
 
-Introduction
-------------
+### Introduction
 
 > And I, infinitesimal being,
 > drunk with the great starry
@@ -18,7 +17,7 @@ Introduction
 > I wheeled with the stars,
 > my heart broke loose on the wind.
 >
-> - Pablo Neruda
+> ~ Pablo Neruda
 
 The Void Probability Function (VPF) is a probability density function over the
 radius of randomly placed spheres in space, showing the probability that a
@@ -33,8 +32,7 @@ the observed galaxy number density and 2-point projected correlation function,
 we show the consistency of the HOD with the BOSS data via comparison of VPFs.
 
 
-Code
-----
+### Code and Data
 
 The code in this repository is designed to work as a standalone automated
 reproduction of the exact methodology of our experiment. Simply by running the
@@ -62,7 +60,21 @@ details are treated in the DATA.doc readme
 
 TODO
 
-For access to as of yet proprietary data, you will have to contact the code
-authors.
-have to symlink some directories
+For access to as of yet proprietary data, you will have to contact the authors.
 
+
+### Subdirectories
+
+BOSS_vpf
+|
+|--dat
+|  (stores the modules for data manipulation and storage and the subdirectories
+|   in which the output of the code is stored)
+|
+|--tests
+|  (stores scripts and modules that test the consistency of the algorithms used
+|   and that visualise the data in a useful way to help understand its
+|   structure)
+|
+|--figs
+|  (stores the modules that plot the figures from the paper and their output)
