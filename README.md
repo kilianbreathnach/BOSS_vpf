@@ -1,8 +1,8 @@
 Finding the Void Probability Function of galaxies in BOSS data (CMASS and LOWZ)
 -------------------------------------------------------------------------------
 
-Kilian Walsh and Jeremy Tinker
-(arxiv article: ...)
+        Kilian Walsh and Jeremy Tinker
+        (arxiv article: ...)
 
 
 ### Introduction
@@ -65,16 +65,17 @@ For access to as of yet proprietary data, you will have to contact the authors.
 
 ### Subdirectories
 
-BOSS_vpf
-|
-|--dat
-|  (stores the modules for data manipulation and storage and the subdirectories
-|   in which the output of the code is stored)
-|
-|--tests
-|  (stores scripts and modules that test the consistency of the algorithms used
-|   and that visualise the data in a useful way to help understand its
-|   structure)
-|
-|--figs
-|  (stores the modules that plot the figures from the paper and their output)
+        BOSS_vpf
+        |
+        |--dat
+        |  (stores the modules for data manipulation and storage and the
+        |   subdirectories in which the output of the code is stored)
+        |
+        |--tests
+        |  (stores scripts and modules that test the consistency of the
+        |   algorithms used and that visualise the data in a useful way to
+        |   help understand its structure)
+        |
+        |--figs
+        |  (stores the modules that plot the figures from the paper and their
+        |   output)
