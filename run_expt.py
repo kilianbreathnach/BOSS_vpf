@@ -1,8 +1,5 @@
-import os
 import subprocess
-import h5py as h5
 from glob import glob
-from astropy.io import fits
 from dat.cartesian_cosmo import mk_coords
 from dat.h5_funcs import mk_h5
 from dat.nbar_zrange import mk_zfile
@@ -42,24 +39,18 @@ nbar = "nbar-cmass-dr11v1-N-Anderson.dat"
 fitsfile = "cmass-dr11v1-N-Anderson.dat.fits"
 rands = "randoms_1E6_cmass_N_dr11v1.dat"
 
-# get the number densities
+# get the corrected number densities
 subprocess.call(['wget', sdss_site + nbar, uname_flag, pw_flag])
+
 # move them to the NGC directory
 subprocess.call(["mv", nbar, "./dat/{0}/".format(survey_cap)])
 
 # get the ra, dec and redshift information from sdss fits file
 subprocess.call(['wget', sdss_site + fitsfile, uname_flag, pw_flag])
 
-f = fits.open(fitsfile)
-fh5 = h5.File("./dat/{0}/radecz.hdf5".format(survey_cap), "a")
+# get the zrange around the mean nbar
+mk_zfile("./dat/{0}/{1}".format(survey_cap, nbar), fitsfile)
 
-radecz = fh5.create_dataset("radecz", shape=(f[1].data.shape[0], 3),
-                            dtype=f[1].data["RA"][0].dtype)
-radecz[:, 0] = f[1].data["RA"]
-radecz[:, 1] = f[1].data["DEC"]
-radecz[:, 2] = f[1].data["Z"]
-
-fh5.close()
 subprocess.call(["mv", fitsfile, "./dat/NGC/CMASS/"])
 
 
@@ -87,11 +78,6 @@ mk_h5("./dat/NGC/CMASS/full_veto.dat", "./dat/NGC/CMASS/veto.hdf5",
       "bad_pts", usecols=(0, 1))
 
 
-# get the zrange around the mean nbar
-
-mk_zfile("./dat/NGC/CMASS/nbar-cmass-dr11v1-N-Anderson.dat", fitsfile)
-
-
 # Convert (RA, Dec, z) to cartesian points for the VPF calculation
 
 radec_fns = glob("./dat/NGC/CMASS/radecz.hdf5")
@@ -99,3 +85,6 @@ radec_fns = glob("./dat/NGC/CMASS/radecz.hdf5")
 mk_coords(radec_fns[0], "./dat/NGC/CMASS/WMAP_cart_coords.hdf5", "WMAP")
 
 # Eventually need to include SGC and LOWZ components too...
+
+
+# Now to run the VPF analysis on our data
