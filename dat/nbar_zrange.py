@@ -51,9 +51,9 @@ def cut_zs(nz_dict, nbar, fitsfile):
     for i, nd in enumerate(num_down):
         """Turn on the right amount of galaxies in each bin."""
         zbin_ids = np.where( ( (zbinedges[i] < radecz[:, 2]) & \
-                               (radecz[:, 2) <= zbinedges[i + 1]) ) == True )
+                               (radecz[:, 2] <= zbinedges[i + 1]) ) == True )
 
-        keep = np.random.choice(zbin_ids[0], size=cn, replace=False)
+        keep = np.random.choice(zbin_ids[0], size=nd, replace=False)
 
         finmask[keep] = True
 
@@ -64,12 +64,12 @@ def cut_zs(nz_dict, nbar, fitsfile):
             "radecz")
 
 
-def mk_zfile(nbar, fitsfile, mk_cut=True):
+def mk_zfile(nbarfile, fitsfile, mk_cut=True):
 
     # width around maximum
     Q = 0.85
 
-    nbar_arr = np.loadtxt(nbar)
+    nbar_arr = np.loadtxt(nbarfile)
     nz_dict = {"Q": Q}
 
     # Cut out the first bit of crap (works for CMASS, dunno about LOWZ)
@@ -84,6 +84,7 @@ def mk_zfile(nbar, fitsfile, mk_cut=True):
     max_nbar = np.max(nbar)
     max_i = int(np.where(nbar == max_nbar)[0])
 
+    nz_dict["max_nbar"] = max_nbar
     nz_dict["nbar_corr_tophat"] = Q * max_nbar
     nz_dict["z_nbar_max"] = zcen[max_i]
 
@@ -95,11 +96,12 @@ def mk_zfile(nbar, fitsfile, mk_cut=True):
     nz_dict["zhi"] = zcen[R]
 
     nz_dict["avg_nbar_corr"] = np.average(nbar[L:R + 1])
+    nz_dict["shell_vol"] = np.sum(nbar_arr[L:R + 1, -2])
 
     if mk_cut:
-        cut_zs(nz_dict, nbar, fitsfile)
+        cut_zs(nz_dict, nbarfile, fitsfile)
 
-    nf = open("{0}/nbar_zrange.json".format(os.path.dirname(nbar)), 'w')
+    nf = open("{0}/nbar_zrange.json".format(os.path.dirname(nbarfile)), 'w')
 
     json.dump(nz_dict, nf, sort_keys=True, indent=4, separators=(',', ':\t'))
 

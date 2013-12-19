@@ -6,17 +6,17 @@ from astropy.cosmology import Planck13, WMAP5
 from scipy.spatial import cKDTree
 
 
-Nsph = 1000000
+Nsph = 100000
 norm = 1. / Nsph
 
 
-f_good = h5.File("../dat/NGC/CMASS/srch_pts.hdf5")
+f_good = h5.File("../dat/CMASS/NGC/srch_pts.hdf5")
 good_pts = f_good["good_pts"]
 
-f_bad = h5.File("../dat/NGC/CMASS/veto.hdf5")
+f_bad = h5.File("../dat/CMASS/NGC/veto.hdf5")
 bad_pts = f_bad["bad_pts"]
 
-nbar_vals = np.loadtxt("../dat/NGC/CMASS/nbar_zrange.dat")
+nbar_vals = np.loadtxt("../dat/CMASS/NGC/nbar_zrange.dat")
 zlo = nbar_vals[1]
 zhi = nbar_vals[2]
 
@@ -62,7 +62,7 @@ def central_angle(coord1, coord2):
 bad_xyz = radec2xyz(bad_pts)
 veto_baum = cKDTree(bad_xyz)
 
-rad = np.arange(1.0, 62.0, 5.0)
+rad = np.arange(51.0, 62.0, 5.0)
 
 rand_i = 0
 
@@ -116,7 +116,7 @@ for r_i, r in enumerate(rad):
 
             bad_vol += 1.5 * (bad_r_deg / R) ** 2 * np.sqrt(1.0 - l ** 2)
 
-        f_r = open("./test_dat/NGC/CMASS/completeness_1mil/volfrac_rad{0}.dat".
+        f_r = open("./test_dat/CMASS/NGC/completeness_100k/volfrac_rad{0}.dat".
                        format(r), 'a')
         f_r.write("{0}\n".format(bad_vol))
         f_r.close()

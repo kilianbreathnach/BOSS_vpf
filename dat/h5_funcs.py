@@ -37,3 +37,17 @@ def arr2_h5(arr, outfile, dset_name):
     dset[:, :] = arr[:, :]
 
     f.close()
+
+
+def h5_arr(h5file, dset):
+    """
+    This function copies the desired array from a hdf5 file and returns
+    it.
+    """
+    f = h5.File(h5file, 'r')
+
+    arr = f[dset].value
+
+    f.close()
+
+    return arr
