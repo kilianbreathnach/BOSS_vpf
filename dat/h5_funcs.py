@@ -17,9 +17,9 @@ def mk_h5(infile, outfile, dset_name, **kwargs):
 
     dset = f.create_dataset(dset_name,
                             shape=dat.shape,
-                            dtype=dat[0, 0].dtype)
+                            dtype=dat.dtype)
 
-    dset[:, :] = dat[:, :]
+    dset[:] = dat[:]
 
     f.close()
 
@@ -32,9 +32,9 @@ def arr2h5(arr, outfile, dset_name, mode='a'):
 
     dset = f.create_dataset(dset_name,
                             shape=arr.shape,
-                            dtype=arr[0, 0].dtype)
+                            dtype=arr.dtype)
 
-    dset[:, :] = arr[:, :]
+    dset[:] = arr[:]
 
     f.close()
 
