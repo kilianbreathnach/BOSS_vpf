@@ -24,11 +24,11 @@ def mk_h5(infile, outfile, dset_name, **kwargs):
     f.close()
 
 
-def arr2_h5(arr, outfile, dset_name):
+def arr2h5(arr, outfile, dset_name, mode='a'):
     """
     This function takes a numpy array and saves it to a HDF5 file.
     """
-    f = h5.File(outfile, 'a')
+    f = h5.File(outfile, mode)
 
     dset = f.create_dataset(dset_name,
                             shape=arr.shape,

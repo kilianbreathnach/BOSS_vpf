@@ -3,7 +3,7 @@ import json
 import numpy as np
 from glob import glob
 from astropy.io import fits
-from h5_funcs import arr2_h5
+from h5_funcs import arr2h5
 
 
 """
@@ -31,7 +31,7 @@ def cut_zs(nz_dict, nbar, fitsfile):
     radecz[:, 2] = f[1].data["Z"]
 
     # Make the redshift cut in the nbar array
-    nbar_arr = nbar_arr[(nz_dict["zlo"] < nbar_arr[:, 0]) & \
+    nbar_arr = nbar_arr[(nz_dict["zlo"] < nbar_arr[:, 0]) * \
                         (nbar_arr[:, 0] < nz_dict["zhi"])]
 
     # Get binning those observed galaxies
@@ -50,27 +50,26 @@ def cut_zs(nz_dict, nbar, fitsfile):
 
     for i, nd in enumerate(num_down):
         """Turn on the right amount of galaxies in each bin."""
-        zbin_ids = np.where( ( (zbinedges[i] < radecz[:, 2]) & \
-                               (radecz[:, 2] <= zbinedges[i + 1]) ) == True )
+        zbin_ids = np.where(((zbinedges[i] < radecz[:, 2]) * \
+                             (radecz[:, 2] <= zbinedges[i + 1])) == True)
 
         keep = np.random.choice(zbin_ids[0], size=nd, replace=False)
 
         finmask[keep] = True
 
-    radecz = radecz[(finmask,)]
 
-    arr2_h5(radecz,
-            "./{0}/radecz.hdf5".format(os.path.dirname(nbar)),
-            "radecz")
+    radecz = radecz[finmask]
+
+    arr2h5(radecz, "./{0}/radecz.hdf5".format(os.path.dirname(nbar)), "radecz")
 
 
 def mk_zfile(nbarfile, fitsfile, mk_cut=True):
 
     # width around maximum
-    Q = 0.85
+    Q = 0.65
 
     nbar_arr = np.loadtxt(nbarfile)
-    nz_dict = {"Q": Q}
+    nz_dict = {"tophat height for zrange": Q}
 
     # Cut out the first bit of crap (works for CMASS, dunno about LOWZ)
     ind03 = np.abs(nbar_arr[:, 0] - 0.3).argmin()
@@ -112,9 +111,9 @@ if __name__ == "__main__":
 
     import sys
 
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 2:
         print "usage: python nbar_zrange.py\
-               <nbarfile + associated fits: '[NGC, SGC]/[CMASS, LOWZ]'>"
+               <nbarfile + associated fits: '[CMASS, LOWZ]/[NGC, SGC]'>"
         assert(False)
 
     nbar_fn = glob("{0}/nbar*dat".format(sys.argv[-1]))[0]

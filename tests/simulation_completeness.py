@@ -30,7 +30,7 @@ def box_completeness(Nsph, simul_cosmo):
     inty = interp2d(A[0, :], B[:, 0], splarr)
 
     bad_pts = 1000 * np.random.rand(138621, 2)
-    bad_r = 0.21430156766000885  # determined from quick calculation for now
+    bad_r = 0.0004275  # determined from quick calculation for now
     bad_A = np.pi * bad_r ** 2
 
     badbaum = cKDTree(bad_pts)
