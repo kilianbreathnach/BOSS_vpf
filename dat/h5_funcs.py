@@ -1,5 +1,6 @@
 import numpy as np
 import h5py as h5
+from astropy.io import fits
 
 
 def mk_h5(infile, outfile, dset_name, **kwargs):
@@ -51,3 +52,35 @@ def h5_arr(h5file, dset):
     f.close()
 
     return arr
+
+
+def fits2h5(fitsfile, HDU, col_list, h5file, dset):
+    """
+    This function takes vectors from a fitsfile HDU and puts them into
+    columns of an array in a HDF5 dataset.
+
+    Parameters
+    ----------
+
+    fitsfile: string
+        address of a FITS file
+    HDU: int
+        the number of the header data unit to get the data from
+    col_list: list
+        a list of strings that correspond to the names of the columns
+        to be extracted
+    h5file: string
+        name of HDF5 file to be created
+    dset: string
+        name of the dataset to be created in the HDF5 file to hold the array
+        of FITS columns
+    """
+
+    f = fits.open(fitsfile)
+
+    arr = np.zeros((f[HDU].data.shape, len(col_list)))
+
+    for i, col in enumerate(col_list):
+        arr[:, i] = f[HDU].data[col]
+
+    arr2h5(arr, h5file, dset)
