@@ -31,18 +31,19 @@ sphere whose voidness is uncertain may be determined.
 def vpf(dat_dir, Nsph, simul_cosmo, rad):
 
     # Grab the data coordinates
-    gals = h5_arr("./dat/{0}/{1}/cart_coords.hdf5".format(dat_dir,
-        simul_cosmo),
-        "cart_pts")
+    gals = h5_arr("./dat/out/{0}/{1}/gals_cart_coords.hdf5".
+                      format(dat_dir, simul_cosmo), "cart_pts")
 
     # Get details about the redshift interval being considered
-    nbar_dict = json.load(open("./dat/{0}/nbar_zrange.json".format(dat_dir)))
+    nbar_dict = json.load(open("./dat/out/{0}/{1}/nbar_zrange.json".
+                                   format(dat_dir, simul_cosmo)))
     zlo = nbar_dict["zlo"]
     zhi = nbar_dict["zhi"]
 
     # Get the search points
-    good_pts = h5_arr("./dat/{0}/srch_pts.hdf5".format(dat_dir), "good_pts")
-    bad_pts = h5_arr("./dat/{0}/veto.hdf5".format(dat_dir), "bad_pts")
+    good_pts = h5_arr("./dat/out/{0}/srch_radec.hdf5".format(dat_dir), "good_pts")
+    bad_pts = h5_arr("./dat/out/{0}/veto.hdf5".format(dat_dir),
+                     "bad_pts")
 
     # Set angular radius of effective area around bad points
     bad_r = np.arccos(1.0 - (np.pi * 9.8544099e-05) / (2 * 180 ** 2))
@@ -181,7 +182,7 @@ def vpf(dat_dir, Nsph, simul_cosmo, rad):
                     bad_vol += 1.5 * (bad_r_deg / R) ** 2 \
                                    * np.sqrt(1.0 - l ** 2)
 
-                f_r = open("./dat/{0}/{1}/out/volfrac_rad{2}.dat".
+                f_r = open("./dat/out/{0}/{1}/vpf_out/volfrac_{2}.dat".
                                format(dat_dir, simul_cosmo, r),
                            'a')
                 f_r.write("{0}\n".format(bad_vol))

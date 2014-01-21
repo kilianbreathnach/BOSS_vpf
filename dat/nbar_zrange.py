@@ -3,7 +3,7 @@ import json
 import numpy as np
 from glob import glob
 from astropy.io import fits
-from astropy.coordinates import Distance 
+from astropy.coordinates import Distance
 from astropy.cosmology import Planck13, WMAP5
 from h5_funcs import arr2h5, h5_arr
 
@@ -71,15 +71,14 @@ def cut_zs(nz_dict, nbar, radeczfile, cosmo):
 
     radecz = radecz[finmask]
 
-    arr2h5(radecz, "{0}/{1}/down_radecz.hdf5".format(os.path.dirname(radeczfile), cosmo),
-           "radecz")
+    arr2h5(radecz, "{0}/{1}/down_radecz.hdf5".format(os.path.dirname(radeczfile), cosmo), "radecz")
 
 
 def mk_zfile(nbarfile, radeczfile, cosmology, mk_cut=True):
 
     # magic number for width around maximum
     Q = 0.65
-    # magic number for 
+    # magic number for
     Nfrac = (6769.0358 * np.pi) / 129600
 
     if cosmology == "Planck":
@@ -129,12 +128,13 @@ def mk_zfile(nbarfile, radeczfile, cosmology, mk_cut=True):
     nz_dict["zhi"] = zcen[R]
 
     nz_dict["avg_nbar_corr"] = np.average(nbar[L:R + 1])
-    nz_dict["shell_vol"] = np.sum(nbar_arr[L:R + 1, -2])
+    nz_dict["shell_vol"] = np.sum(shell_vols[L:R + 1])
 
     if mk_cut:
         cut_zs(nz_dict, nbarfile, radeczfile, cosmology)
 
-    nf = open("{0}/nbar_zrange.json".format(os.path.dirname(nbarfile)), 'w')
+    nf = open("{0}/{1}/nbar_zrange.json".
+                  format(os.path.dirname(radeczfile), cosmology), 'w')
 
     json.dump(nz_dict, nf, sort_keys=True, indent=4, separators=(',', ':\t'))
 

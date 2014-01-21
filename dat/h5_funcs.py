@@ -76,11 +76,11 @@ def fits2h5(fitsfile, HDU, col_list, h5file, dset):
         of FITS columns
     """
 
-    f = fits.open(fitsfile)
+    dat = fits.open(fitsfile)[HDU].data
 
-    arr = np.zeros((f[HDU].data.shape, len(col_list)))
+    arr = np.zeros((dat.shape[0], len(col_list)))
 
     for i, col in enumerate(col_list):
-        arr[:, i] = f[HDU].data[col]
+        arr[:, i] = dat[col]
 
     arr2h5(arr, h5file, dset)
