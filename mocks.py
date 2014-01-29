@@ -59,10 +59,7 @@ def mk_mock_srch(radecfile, nzdictfile, Nsph, simul_cosmo):
 
         radeczlist[r_i][:, 2] = randz[:]
 
-        arr2h5(radeczlist[r_i],
-                "{0}/{1}/mock_srch_pts.hdf5".
-                format(os.path.dirname(radecfile), simul_cosmo),
-                "radecz_{0}".format(str(r_i * 5 + 1)))
+        arr2h5(radeczlist[r_i], "{0}/{1}/mocks/mock_srch_pts.hdf5".format(os.path.dirname(radecfile), simul_cosmo), "radecz_{0}".format(str(r_i * 5 + 1)))
 
 
 def mk_mock_coords(radeczfile, outfile, simul_cosmo):
@@ -90,14 +87,15 @@ def mk_mock_coords(radeczfile, outfile, simul_cosmo):
 
         coord = ICRSCoordinates(ra, dec, distance=dis)
 
-        cart[i, :] = np.array([coord.x, coord.y, coord.z])
+        cart[i, :] = np.array([coord.x.value, coord.y.value, coord.z.value])
 
-    arr2h5(cart, outfile, "coords")
+    arr2h5(cart, outfile, "coords", mode='w')
 
 
-def mock_vpf(spheresfile, simul_cosmo):
+def mock_vpf(mock_cart_coords, spheresfile, simul_cosmo):
 
-    gals = h5_arr("./dat/mocktest/cart_coords_WMAP_0001.hdf5", "coords")
+    gals = h5_arr(mock_cart_coords, "coords")
+    name = mock_cart_coords.split("/")[-1].split(".")[0]
 
     if simul_cosmo == "Planck":
         # First make h free
@@ -137,5 +135,5 @@ def mock_vpf(spheresfile, simul_cosmo):
                 voids[i] = 1
 
         arr2h5(voids,
-                ".dat/mocktest/voids_0001.hdf5"
+                "{0}/vpf_out/{1}.hdf5".format(os.path.dirname(spheresfile), name),
                 "voids_{0}".format(str(r_i * 5 + 1)))

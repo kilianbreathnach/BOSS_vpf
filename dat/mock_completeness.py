@@ -6,20 +6,26 @@ from astropy.cosmology import Planck13, WMAP5
 from scipy.spatial import cKDTree
 from h5_funcs import h5_arr, arr2h5
 
+survey_cap = "CMASS/NGC"
+simul_cosmo = "WMAP"
 
-spheresfile = "CMASS/NGC/WMAP/mock_srch_pts.hdf5"
+spheresfile = "out/{0}/{1}/mocks/mock_srch_pts.hdf5".format(survey_cap, simul_cosmo)
 
-bad_pts = np.loadtxt("CMASS/NGC/north_block_outside.dat", usecols=(0, 1))
+bad_pts = np.loadtxt("in/CMASS_DATA/north_block_outside.dat", usecols=(0, 1))
 
-nbar_vals = json.load(open("../dat/CMASS/NGC/nbar_zrange.json"))
+nbar_vals = json.load(open("out/{0}/{1}/nbar_zrange.json".format(survey_cap, simul_cosmo)))
 zlo = nbar_vals["zlo"]
 zhi = nbar_vals["zhi"]
 
 bad_r = np.arccos(1.0 - (np.pi * 9.8544099e-05) / (2 * 180 ** 2))
 bad_r_deg = np.rad2deg(bad_r)
 
-WMAP5.__init__(100.0, WMAP5.Om0)
-cosmo = WMAP5
+if simul_cosmo == "Planck":
+    Planck13.__init__(100.0, Planck13.Om0)
+    cosmo = Planck13
+elif simul_cosmo == "WMAP":
+    WMAP5.__init__(100.0, WMAP5.Om0)
+    cosmo = WMAP5
 comv = cosmo.comoving_distance
 
 
@@ -106,6 +112,8 @@ for r_i, r in enumerate(rad):
 
             bad_vol += 1.5 * (bad_r_deg / R) ** 2 * np.sqrt(1.0 - l ** 2)
 
+        badvols[i] = bad_vol
+
     arr2h5(badvols,
-            "CMASS/NGC/WMAP/mock_badvols.hdf5",
+            "{0}/mock_badvols.hdf5".format(os.path.dirname(spheresfile)),
             "badvols_{0}".format(str(r_i * 5 + 1)))

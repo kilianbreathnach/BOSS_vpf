@@ -3,7 +3,7 @@ import h5py as h5
 from astropy.io import fits
 
 
-def mk_h5(infile, outfile, dset_name, **kwargs):
+def mk_h5(infile, outfile, dset_name, mode='a', **kwargs):
     """
     This function takes an ASCII file with space-separated columns of data
     and makes a HDF5 file of the desired columns of data, skipping an
@@ -14,7 +14,7 @@ def mk_h5(infile, outfile, dset_name, **kwargs):
 
     dat = np.loadtxt(infile, skiprows=rows, usecols=cols)
 
-    f = h5.File(outfile, 'a')
+    f = h5.File(outfile, mode)
 
     dset = f.create_dataset(dset_name,
                             shape=dat.shape,
