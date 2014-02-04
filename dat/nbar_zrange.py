@@ -12,10 +12,11 @@ from h5_funcs import arr2h5, h5_arr
 This file contains functions to take the BOSS data file for corrected number
 density as a function of redshift and process it for our purposes.
 
-mk_zfile decides on a width around the redshift of maximum number density
+process_nbar decides on a width around the redshift of maximum number density
 of each survey that we focus on for our analysis (decided by Q below) and
 computes the overall average in that redshift range. It stores
-information to The Another function uses the range and
+information to a json output file and then uses this information to process
+either the data or a mock data file.
 """
 
 
@@ -26,59 +27,32 @@ def calc_shell_vol(dis_func, z_near, z_far, zcen):
     function. Results are in (h^-1 Mpc)^3.
     """
 
-    r = dis_func(zcen).value
-    r_near = dis_func(z_near).value
-    r_far = dis_func(z_far).value
+    r = dis_func(zcen)
+    r_near = dis_func(z_near)
+    r_far = dis_func(z_far)
     dr = r_far - r_near
 
     return 4 * np.pi * (r ** 2) * dr
 
 
-def cut_zs(nz_dict, nbar, radeczfile, cosmo):
+def process_nbar(nbarfile, nz_dict_file, cosmology, radeczfile=None):
+    """
+    Parameters
+    ---------
 
-
-    # open files
-    radecz = h5_arr(radeczfile, "radecz")
-    nbar_arr = np.loadtxt(nbar)
-
-    # Make the redshift cut in the nbar array
-    nbar_arr = nbar_arr[(nz_dict["zlo"] < nbar_arr[:, 0]) * \
-                        (nbar_arr[:, 0] < nz_dict["zhi"])]
-
-    # Get binning those observed galaxies
-    zbinedges = np.append(nbar_arr[0, 1], nbar_arr[:, 2])
-
-    # Find the counts per bin
-    H = np.histogram(radecz[:, 2], bins=zbinedges)
-
-    # The number to downsample to in each bin
-    # (multiply bin number by the relative fraction determined from
-    #  corrected distribution of nbar)
-    num_down = (nz_dict["nbar_corr_tophat"] / nbar_arr[:, 3]) * H[0]
-
-    # make a mask for the final array for analysis within the redshift limits
-    finmask = np.array(radecz.shape[0] * [False])
-
-    for i, nd in enumerate(num_down):
-        """Turn on the right amount of galaxies in each bin."""
-        zbin_ids = np.where(((zbinedges[i] < radecz[:, 2]) * \
-                             (radecz[:, 2] <= zbinedges[i + 1])) == True)
-
-        keep = np.random.choice(zbin_ids[0], size=nd, replace=False)
-
-        finmask[keep] = True
-
-
-    radecz = radecz[finmask]
-
-    arr2h5(radecz, "{0}/{1}/down_radecz.hdf5".format(os.path.dirname(radeczfile), cosmo), "radecz")
-
-
-def mk_zfile(nbarfile, radeczfile, cosmology, mk_cut=True):
+    nbarfile : str
+        the path to and name of the corrected nbar file
+    nz_dict_file : str
+        path to and name of the json file with the nbar dict
+    cosmology : str, "WMAP" or "Planck"
+        the cosmology to compute shell volumes with
+    radeczfile : str, "data" or "mock"
+        the data or mock file to process
+    """
 
     # magic number for width around maximum
     Q = 0.65
-    # magic number for
+    # magic number for shell vol computation
     Nfrac = (6769.0358 * np.pi) / 129600
 
     if cosmology == "Planck":
@@ -89,18 +63,18 @@ def mk_zfile(nbarfile, radeczfile, cosmology, mk_cut=True):
         cosmo = WMAP5
     comv = cosmo.comoving_distance
 
-    nbar_arr = np.loadtxt(nbarfile)
+    nbar_corr = np.loadtxt(nbarfile)
     nz_dict = {"tophat height for zrange": Q}
 
     # Cut out the first bit of crap (works for CMASS, dunno about LOWZ)
-    ind03 = np.abs(nbar_arr[:, 0] - 0.3).argmin()
+    ind03 = np.abs(nbar_corr[:, 0] - 0.3).argmin()
 
-    nbar_arr = nbar_arr[ind03:, :]
+    nbar_corr = nbar_corr[ind03:, :]
 
-    zcen = nbar_arr[:, 0]
-    z_near = nbar_arr[:, 1]
-    z_far = nbar_arr[:, 2]
-    gal_counts = nbar_arr[:, 6]
+    zcen = nbar_corr[:, 0]
+    z_near = nbar_corr[:, 1]
+    z_far = nbar_corr[:, 2]
+    corr_gal_counts = nbar_corr[:, 6]
 
     nbar = []
     shell_vols = []
@@ -108,7 +82,7 @@ def mk_zfile(nbarfile, radeczfile, cosmology, mk_cut=True):
     for i in range(len(zcen)):
 
         shell_vols.append(Nfrac * calc_shell_vol(comv, z_near[i], z_far[i], zcen[i]))
-        nbar.append(gal_counts[i] / shell_vols[i])
+        nbar.append(corr_gal_counts[i] / shell_vols[i])
 
     nbar = np.array(nbar)
 
@@ -116,42 +90,105 @@ def mk_zfile(nbarfile, radeczfile, cosmology, mk_cut=True):
     max_nbar = np.max(nbar)
     max_i = int(np.where(nbar == max_nbar)[0])
 
-    nz_dict["max_nbar"] = max_nbar
+    nz_dict["max_nbar_corr"] = max_nbar
     nz_dict["nbar_corr_tophat"] = Q * max_nbar
     nz_dict["z_nbar_max"] = zcen[max_i]
 
-    # get the interval edge indices for 10%
+    # get the interval edge indices
     L = np.abs(nbar[:max_i] - max_nbar * Q).argmin()
     R = max_i + np.abs(nbar[max_i:] - max_nbar * Q).argmin()
+
+    nbar = nbar[L:R + 1]
+    shell_vols = shell_vols[L:R + 1]
 
     nz_dict["zlo"] = zcen[L]
     nz_dict["zhi"] = zcen[R]
 
-    nz_dict["avg_nbar_corr"] = np.average(nbar[L:R + 1])
-    nz_dict["shell_vol"] = np.sum(shell_vols[L:R + 1])
+    nz_dict["avg_nbar_corr"] = np.average(nbar)
+    nz_dict["total_shell_vol"] = np.sum(shell_vols)
 
-    if mk_cut:
-        cut_zs(nz_dict, nbarfile, radeczfile, cosmology)
+    if radeczfile:
 
-    nf = open("{0}/{1}/nbar_zrange.json".
-                  format(os.path.dirname(radeczfile), cosmology), 'w')
+        radecz = h5_arr(radeczfile, "radecz")
+
+        # Make the redshift cut in the nbar array with right cosmology
+        nbar_corr = nbar_corr[(nz_dict["zlo"] <= nbar_corr[:, 0]) * \
+                            (nbar_corr[:, 0] <= nz_dict["zhi"])]
+
+        # Get binning those observed galaxies
+        zbinedges = np.append(nbar_corr[0, 1], nbar_corr[:, 2])
+
+        # Find the counts per bin
+        H = np.histogram(radecz[:, 2], bins=zbinedges)
+
+        # The number to downsample to in each bin
+        # (multiply bin number by the relative fraction determined from
+        #  corrected distribution of nbar)
+        num_down = np.rint((nz_dict["nbar_corr_tophat"] / nbar[:]) * H[0])
+        num_down = num_down.astype(int)
+
+        # make a mask for the final array for analysis within the redshift limits
+        finmask = np.array(radecz.shape[0] * [False])
+
+        for i, nd in enumerate(num_down):
+            """Turn on the right amount of galaxies in each bin."""
+            zbin_ids = np.where(((zbinedges[i] < radecz[:, 2]) * \
+                                 (radecz[:, 2] <= zbinedges[i + 1])) == True)
+
+            keep = np.random.choice(zbin_ids[0], size=nd, replace=False)
+
+            finmask[keep] = True
+
+        radecz = radecz[finmask]
+
+        # if we are dealing with a mockfile, then there is an extra factor to make
+        # the average equal that of the data
+        if radeczfile.split('/')[-2] == "mocks_hierarchical":
+
+            # have to open the existing json file
+
+            H = np.histogram(radecz[:, 2], bins=zbinedges)
+
+            num_down = (nz_dict["avg_nbar_down"] / np.average(H[0])) * H[0]
+
+            finmask = np.array(radecz.shape[0] * [False])
+
+            for i, nd in enumerate(num_down):
+                """Turn on the right amount of galaxies in each bin."""
+                zbin_ids = np.where(((zbinedges[i] < radecz[:, 2]) * \
+                                     (radecz[:, 2] <= zbinedges[i + 1])) == True)
+
+                keep = np.random.choice(zbin_ids[0], size=nd, replace=False)
+
+                finmask[keep] = True
+
+            radecz = radecz[finmask]
+
+            # and save to a hdf5 file
+            mock_no = radeczfile.split('/')[-1].split('.')[0]
+            arr2h5(radecz, "{0}/mocks/rdz_down/{1}.hdf5".format(os.path.dirname(nz_dict_file), mock_no), "radecz")
+
+
+        if not radeczfile.split('/')[-2] == "mocks_hierarchical":
+            # now get nbar for the downsampled data for use in mock processing and simulation
+            gal_counts = np.histogram(radecz[:, 2], bins=zbinedges)[0]
+
+            nbar_down = []
+
+            for i in range(len(gal_counts)):
+
+                nbar_down.append(gal_counts[i] / shell_vols[i])
+
+            nbar_down = np.array(nbar_down)
+
+            # save the average downsampled value
+            nz_dict["avg_nbar_down"] = np.average(nbar_down)
+
+            # and save downsampled array to a hdf5 file
+            arr2h5(radecz, "{0}/radecz_down.hdf5".format(os.path.dirname(nz_dict_file)), "radecz")
+
+    nf = open(nz_dict_file, 'w')
 
     json.dump(nz_dict, nf, sort_keys=True, indent=4, separators=(',', ':\t'))
 
     nf.close()
-
-
-if __name__ == "__main__":
-
-    import sys
-
-    if len(sys.argv) != 3:
-        print "usage: python nbar_zrange.py\
-               <nbarfile + associated fits: '[CMASS, LOWZ]/[NGC, SGC]'>\
-               <WMAP/Planck>"
-        assert(False)
-
-    nbar_fn = glob("{0}/nbar*dat".format(sys.argv[-1]))[0]
-    fits_fn = glob("{0}/*fits".format(sys.argv[-1]))[0]
-
-    mk_zfile(nbar_fn, fits_fn, cosmology)

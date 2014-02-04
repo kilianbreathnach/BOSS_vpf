@@ -5,7 +5,7 @@ from glob import glob
 import numpy as np
 from dat.cartesian_cosmo import mk_coords
 from dat.h5_funcs import mk_h5, fits2h5
-from dat.nbar_zrange import mk_zfile
+from dat.nbar_zrange import process_nbar
 
 
 """
@@ -122,7 +122,7 @@ fits2h5("{0}/cmass-dr11v1-N-Anderson.dat.fits".format(sdss_dir),
 
 # create HDF5 of the random search RA, Dec values
 mk_h5("{0}/randoms_1E6_cmass_N_dr11v1.dat".format(CMASS_dir),
-      "{0}/srch_radec.hdf5", "good_pts", skiprows=1, usecols=(0, 1))
+      "{0}/srch_radec.hdf5".format(out_dir), "good_pts", skiprows=1, usecols=(0, 1))
 
 # Make a unified hdf5 veto file out of the bad points files
 catfiles = glob("{0}/north_block_*".format(CMASS_dir))
@@ -147,12 +147,13 @@ if not os.path.exists(cosmo_dir):
     os.makedirs(cosmo_dir)
 
 # get the zrange around the mean nbar
-mk_zfile("{0}/nbar-cmass-dr11v1-N-Anderson.dat".format(sdss_dir),
-         "{0}/full_radecz.hdf5".format(out_dir), cosmo)
+process_nbar("{0}/nbar-cmass-dr11v1-N-Anderson.dat".format(sdss_dir),
+             "{0}/{1}/nbar_zrange.json".format(out_dir, cosmo), cosmo,
+             radeczfile="{0}/full_radecz.hdf5".format(out_dir))
 
 # Convert (RA, Dec, z) to cartesian points for the VPF calculation
 
-radec_fns = glob("{0}/{1}/*radecz.hdf5".format(out_dir, cosmo))
+radec_fns = glob("{0}/{1}/radecz_down.hdf5".format(out_dir, cosmo))
 
 mk_coords(radec_fns[0],
           "{0}/{1}/gals_cart_coords.hdf5".format(out_dir, cosmo),
