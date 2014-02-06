@@ -27,9 +27,9 @@ def calc_shell_vol(dis_func, z_near, z_far, zcen):
     function. Results are in (h^-1 Mpc)^3.
     """
 
-    r = dis_func(zcen)
-    r_near = dis_func(z_near)
-    r_far = dis_func(z_far)
+    r = dis_func(zcen).value
+    r_near = dis_func(z_near).value
+    r_far = dis_func(z_far).value
     dr = r_far - r_near
 
     return 4 * np.pi * (r ** 2) * dr
@@ -132,42 +132,16 @@ def process_nbar(nbarfile, nz_dict_file, cosmology, radeczfile=None):
 
         for i, nd in enumerate(num_down):
             """Turn on the right amount of galaxies in each bin."""
-            zbin_ids = np.where(((zbinedges[i] < radecz[:, 2]) * \
-                                 (radecz[:, 2] <= zbinedges[i + 1])) == True)
+            zbin_ids = np.where(((zbinedges[i] < radecz[:, 2]) * (radecz[:, 2] <= zbinedges[i + 1])) == True)
+
+            if zbin_ids[0].shape[0] == 0:
+                continue
 
             keep = np.random.choice(zbin_ids[0], size=nd, replace=False)
 
             finmask[keep] = True
 
         radecz = radecz[finmask]
-
-        # if we are dealing with a mockfile, then there is an extra factor to make
-        # the average equal that of the data
-        if radeczfile.split('/')[-2] == "mocks_hierarchical":
-
-            # have to open the existing json file
-
-            H = np.histogram(radecz[:, 2], bins=zbinedges)
-
-            num_down = (nz_dict["avg_nbar_down"] / np.average(H[0])) * H[0]
-
-            finmask = np.array(radecz.shape[0] * [False])
-
-            for i, nd in enumerate(num_down):
-                """Turn on the right amount of galaxies in each bin."""
-                zbin_ids = np.where(((zbinedges[i] < radecz[:, 2]) * \
-                                     (radecz[:, 2] <= zbinedges[i + 1])) == True)
-
-                keep = np.random.choice(zbin_ids[0], size=nd, replace=False)
-
-                finmask[keep] = True
-
-            radecz = radecz[finmask]
-
-            # and save to a hdf5 file
-            mock_no = radeczfile.split('/')[-1].split('.')[0]
-            arr2h5(radecz, "{0}/mocks/rdz_down/{1}.hdf5".format(os.path.dirname(nz_dict_file), mock_no), "radecz")
-
 
         if not radeczfile.split('/')[-2] == "mocks_hierarchical":
             # now get nbar for the downsampled data for use in mock processing and simulation
@@ -187,8 +161,50 @@ def process_nbar(nbarfile, nz_dict_file, cosmology, radeczfile=None):
             # and save downsampled array to a hdf5 file
             arr2h5(radecz, "{0}/radecz_down.hdf5".format(os.path.dirname(nz_dict_file)), "radecz")
 
-    nf = open(nz_dict_file, 'w')
+        # if we are dealing with a mockfile, then there is an extra factor to make
+        # the average equal that of the data
+        if radeczfile.split('/')[-2] == "mocks_hierarchical":
 
-    json.dump(nz_dict, nf, sort_keys=True, indent=4, separators=(',', ':\t'))
+            # have to open the existing json file
+            jf = open(nz_dict_file)
+            nz_dict = json.load(jf)
 
-    nf.close()
+            gal_counts = np.histogram(radecz[:, 2], bins=zbinedges)[0]
+
+            nbar_mock = []
+
+            for i in range(len(gal_counts)):
+
+                nbar_mock.append(gal_counts[i] / shell_vols[i])
+
+            nbar_mock = np.array(nbar_mock)
+
+            num_down = np.rint((nz_dict["avg_nbar_down"] / np.average(nbar_mock)) * H[0])
+            num_down = num_down.astype(int)
+
+            finmask = np.array(radecz.shape[0] * [False])
+
+            for i, nd in enumerate(num_down):
+                """Turn on the right amount of galaxies in each bin."""
+                zbin_ids = np.where(((zbinedges[i] < radecz[:, 2]) * \
+                                     (radecz[:, 2] <= zbinedges[i + 1])) == True)
+
+                keep = np.random.choice(zbin_ids[0], size=nd, replace=False)
+
+                finmask[keep] = True
+
+            radecz = radecz[finmask]
+
+            # and save to a hdf5 file
+            mock_no = radeczfile.split('/')[-1].split('.')[0]
+            arr2h5(radecz, "{0}/mocks/rdz_down/{1}.hdf5".format(os.path.dirname(nz_dict_file), mock_no), "radecz")
+
+            jf.close()
+
+    if not radeczfile.split('/')[-2] == "mocks_hierarchical":
+        # don't save the json if we're working on a mock
+        nf = open(nz_dict_file, 'w')
+    
+        json.dump(nz_dict, nf, sort_keys=True, indent=4, separators=(',', ':\t'))
+    
+        nf.close()
