@@ -28,6 +28,39 @@ sphere whose voidness is uncertain may be determined.
 """
 
 
+# Define function to help build k-d tree for bad points and do search
+def radec2xyz(radecarr):
+
+    radecarr = np.atleast_2d(radecarr)
+    xyzarr = np.zeros((radecarr.shape[0], 3))
+    xyzarr[:, 0] = np.cos(np.radians(radecarr[:, 1])) * \
+                   np.cos(np.radians(radecarr[:, 0]))
+    xyzarr[:, 1] = np.cos(np.radians(radecarr[:, 1])) * \
+                   np.sin(np.radians(radecarr[:, 0]))
+    xyzarr[:, 2] = np.sin(np.radians(radecarr[:, 1]))
+
+    return xyzarr
+
+# And a function to find angular distance of bad points to sphere
+# projection centres
+def central_angle(coord1, coord2):
+
+    f1 = np.radians(coord1[1])
+    f2 = np.radians(coord2[1])
+
+    dl = abs(coord1[0] - coord2[0])
+
+    if dl > 180:
+        dl = np.radians(dl - 180)
+    else:
+        dl = np.radians(dl)
+    # angle is (from wikipedia formula...)
+    dsig = np.arccos(np.sin(f1) * np.sin(f2) + \
+                     np.cos(f1) * np.cos(f2) * np.cos(dl))
+
+    return dsig
+
+
 def vpf(dat_dir, Nsph, simul_cosmo, rad):
 
     # Grab the data coordinates
@@ -59,38 +92,6 @@ def vpf(dat_dir, Nsph, simul_cosmo, rad):
         WMAP5.__init__(100.0, WMAP5.Om0)
         cosmo = WMAP5
     comv = cosmo.comoving_distance
-
-    # Define function to help build k-d tree for bad points and do search
-    def radec2xyz(radecarr):
-
-        radecarr = np.atleast_2d(radecarr)
-        xyzarr = np.zeros((radecarr.shape[0], 3))
-        xyzarr[:, 0] = np.cos(np.radians(radecarr[:, 1])) * \
-                       np.cos(np.radians(radecarr[:, 0]))
-        xyzarr[:, 1] = np.cos(np.radians(radecarr[:, 1])) * \
-                       np.sin(np.radians(radecarr[:, 0]))
-        xyzarr[:, 2] = np.sin(np.radians(radecarr[:, 1]))
-
-        return xyzarr
-
-    # And a function to find angular distance of bad points to sphere
-    # projection centres
-    def central_angle(coord1, coord2):
-
-        f1 = np.radians(coord1[1])
-        f2 = np.radians(coord2[1])
-
-        dl = abs(coord1[0] - coord2[0])
-
-        if dl > 180:
-            dl = np.radians(dl - 180)
-        else:
-            dl = np.radians(dl)
-        # angle is (from wikipedia formula...)
-        dsig = np.arccos(np.sin(f1) * np.sin(f2) + \
-                         np.cos(f1) * np.cos(f2) * np.cos(dl))
-
-        return dsig
 
     # Build the trees
 

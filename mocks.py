@@ -47,8 +47,8 @@ def mk_mock_srch(radecfile, nzdictfile, Nsph, simul_cosmo):
 
     for r_i, r in enumerate(rad):
 
-        dis_near = Distance(comv(zlo).value + r, u.Mpc)
-        dis_far = Distance(comv(zhi).value - r, u.Mpc)
+        dis_near = Distance(comv(zlo) + r, u.Mpc)
+        dis_far = Distance(comv(zhi) - r, u.Mpc)
 
         z_a = dis_near.compute_z(cosmology=cosmo)
 
@@ -83,11 +83,11 @@ def mk_mock_coords(radeczfile, outfile, simul_cosmo):
         dec = Angle(rdz[1], u.deg)
 
         losd = cosmo.comoving_distance(rdz[2])
-        dis = Distance(losd)
+        dis = Distance(losd, u.Mpc)
 
         coord = ICRSCoordinates(ra, dec, distance=dis)
 
-        cart[i, :] = np.array([coord.x.value, coord.y.value, coord.z.value])
+        cart[i, :] = np.array([coord.x, coord.y, coord.z])
 
     arr2h5(cart, outfile, "coords", mode='w')
 
