@@ -6,8 +6,7 @@ Bs = np.arange(0.0, 1.0, 0.05)
 
 splarr = np.zeros((As.shape[0], Bs.shape[0]))
 
-Nrand = 100000
-norm = 1. / Nrand
+Nrand = 10000000
 
 for i, a in enumerate(As):
 
@@ -17,11 +16,13 @@ for i, a in enumerate(As):
 
         sph = cube[(cube[:, 0] ** 2 + cube[:, 1] ** 2 + cube[:, 2] ** 2) < 1]
 
+        norm = 1. / len(sph)
+
         badarr = np.zeros(sph.shape[0])
         badarr[:] = (sph[:, 0] > a) * (sph[:, 1] > b)
         Nbad = np.sum(badarr)
-
         print Nbad
+        print Nbad * norm
 
         splarr[i, j] = Nbad * norm
 

@@ -6,7 +6,7 @@ from scipy.spatial import cKDTree
 
 def spherical_cap(h):
 
-    return np.pi * (h ** 2) * (1 - h / 3)
+    return 0.75 * (h ** 2) * (1 - h / 3)
 
 
 def box_completeness(Nsph, simul_cosmo):
@@ -19,7 +19,7 @@ def box_completeness(Nsph, simul_cosmo):
         WMAP5.__init__(100.0, WMAP5.Om0)
         cosmo = WMAP5
 
-    rad = np.arange(1.0, 67.0, 5.0)
+    rad = np.arange(5.0, 66.0, 5.0)
 
     As = np.arange(0.0, 1.0, 0.05)
     Bs = np.arange(0.0, 1.0, 0.05)
@@ -29,7 +29,10 @@ def box_completeness(Nsph, simul_cosmo):
 
     inty = interp2d(A[0, :], B[:, 0], splarr)
 
-    bad_pts = 1000 * np.random.rand(138621, 2)
+    # this number from survey I think
+    # should be 2% of "sky" area
+    # had 138621 for some reason, now used 2% to get
+    bad_pts = 1000 * np.random.rand(34834737093, 2)
     bad_r = 0.0004275  # determined from quick calculation for now
     bad_A = np.pi * bad_r ** 2
 
@@ -65,7 +68,7 @@ def box_completeness(Nsph, simul_cosmo):
                 # calculate length pierced through sphere
                 l = 2 * np.sqrt(1 - dis ** 2)
 
-                bad_vol += l * bad_A
+                badvol += l * bad_A
 
             # check if sphere at boundary
             if i in bad_inds:
@@ -97,7 +100,7 @@ if __name__ == "__main__":
     # Get the runtime arguments
 
     if len(sys.argv) != 3:
-        print "usage: python vpf_analysis.py \
+        print "usage: python simulation_completeness.py \
                <No. of spheres at each radius> <Planck | WMAP>"
 
-    box_completeness(int(sys.argv[1]), argv[2])
+    box_completeness(int(sys.argv[1]), sys.argv[2])

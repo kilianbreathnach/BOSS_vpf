@@ -1,3 +1,5 @@
+import time
+import json
 import numpy as np
 import h5py as h5
 from astropy import units as u
@@ -6,19 +8,19 @@ from astropy.cosmology import Planck13, WMAP5
 from scipy.spatial import cKDTree
 
 
-Nsph = 100000
+Nsph = 10000000
 norm = 1. / Nsph
 
 
-f_good = h5.File("../dat/CMASS/NGC/srch_pts.hdf5")
+f_good = h5.File("../dat/out/CMASS/NGC/srch_radec.hdf5")
 good_pts = f_good["good_pts"]
 
-f_bad = h5.File("../dat/CMASS/NGC/veto.hdf5")
+f_bad = h5.File("../dat/out/CMASS/NGC/veto.hdf5")
 bad_pts = f_bad["bad_pts"]
 
-nbar_vals = np.loadtxt("../dat/CMASS/NGC/nbar_zrange.dat")
-zlo = nbar_vals[1]
-zhi = nbar_vals[2]
+nbar_dict = json.load(open("../dat/out/CMASS/NGC/WMAP/nbar_zrange.json"))
+zlo = nbar_dict["zlo"]
+zhi = nbar_dict["zhi"]
 
 bad_r = np.arccos(1.0 - (np.pi * 9.8544099e-05) / (2 * 180 ** 2))
 bad_r_deg = np.rad2deg(bad_r)
@@ -62,14 +64,27 @@ def central_angle(coord1, coord2):
 bad_xyz = radec2xyz(bad_pts)
 veto_baum = cKDTree(bad_xyz)
 
-rad = np.arange(51.0, 62.0, 5.0)
+rad = np.arange(5.0, 66.0, 5.0)
 
 rand_i = 0
 
+t_0 = time.time()
+
 for r_i, r in enumerate(rad):
 
-    # start the count of successful voids
-    count = 0
+    print "time: {0} seconds".format(time.time() - t_0)
+    print " - starting search at radius {0} Mpc".format(r)
+
+    # Custom zrange for sphere size
+    dis_near = Distance(comv(zlo).value + r, u.Mpc)
+    dis_far = Distance(comv(zhi).value - r, u.Mpc)
+
+    z_a = dis_near.compute_z(cosmology=cosmo)
+
+    z_b = dis_far.compute_z(cosmology=cosmo)
+
+    randz = (z_a ** 3 + \
+             (z_b ** 3 - zlo ** 3) * np.random.rand(Nsph)) ** (1. / 3.)
 
     for i in range(Nsph):
 
@@ -80,15 +95,13 @@ for r_i, r in enumerate(rad):
         rang = Angle(radec[0], u.deg)
         decang = Angle(radec[1], u.deg)
 
-        randz = (zlo ** 3 + \
-                 (zhi ** 3 - zlo ** 3) * np.random.rand(1)[0]) ** (1. / 3.)
-        dis = Distance(comv(randz), u.Mpc)
+        dis = Distance(comv(randz[i]), u.Mpc)
 
         coord = ICRSCoordinates(rang, decang, distance=dis)
 
         sph_cen = np.array([coord.x.value, coord.y.value, coord.z.value])
 
-        print "rad: ", r, ", sphere: ", i
+#        print "rad: ", r, ", sphere: ", i
 
         # Get radius of circular projection of sphere
         R = np.arcsin(r / np.sqrt(np.sum(sph_cen[:] ** 2)))
@@ -116,7 +129,7 @@ for r_i, r in enumerate(rad):
 
             bad_vol += 1.5 * (bad_r_deg / R) ** 2 * np.sqrt(1.0 - l ** 2)
 
-        f_r = open("./test_dat/CMASS/NGC/completeness_100k/volfrac_rad{0}.dat".
+        f_r = open("./test_dat/CMASS/NGC/full_completeness_10mil/volfrac_rad{0}.dat".
                        format(r), 'a')
         f_r.write("{0}\n".format(bad_vol))
         f_r.close()

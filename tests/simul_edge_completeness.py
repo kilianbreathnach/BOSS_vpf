@@ -4,9 +4,11 @@ from scipy.interpolate import interp2d
 from scipy.spatial import cKDTree
 
 
-def spherical_cap(h):
+simul_cosmo = "WMAP"
 
-    return np.pi * (h ** 2) * (1 - h / 3)
+
+def spherical_cap(h):
+    return 0.75 * (h ** 2) * (1 - h / 3)
 
 
 if simul_cosmo == "Planck":
@@ -17,8 +19,8 @@ elif simul_cosmo == "WMAP":
     WMAP5.__init__(100.0, WMAP5.Om0)
     cosmo = WMAP5
 
-Nsph = 100000
-rad = np.arange(1.0, 62.0, 5.0)
+Nsph = 10000000
+rad = np.arange(5.0, 66.0, 5.0)
 
 As = np.arange(0.0, 1.0, 0.05)
 Bs = np.arange(0.0, 1.0, 0.05)
@@ -30,22 +32,19 @@ inty = interp2d(A[0, :], B[:, 0], splarr)
 
 for r_i, r in enumerate(rad):
 
+    print "Starting radius {0} Mpc...".format(r)
+
     spheres = 1000 * np.random.rand(Nsph, 2)
     badsphs = spheres[(spheres[:, 0] < r) + (spheres[:, 1] < r) + \
             ((1000 - spheres[:, 0]) < r) + ((1000 - spheres[:, 1]) < r)]
 
     pickle_bool = ((badsphs[:, 0] ** 2 + badsphs[:, 1] ** 2) < r) + \
-           (((1000 - badsphs[:, 0]) ** 2 + (1000 - badsphs[:, 0]) ** 2) < r)
+           (((1000 - badsphs[:, 0]) ** 2 + (1000 - badsphs[:, 1]) ** 2) < r)
     pickles = badsphs[pickle_bool]
+
+    print "there are {0} corner spheres".format(len(pickles))
+
     caps = badsphs[~pickle_bool]
-
-    for pickle in pickles:
-
-        badvol = inty(pickle[0] / r, pickle[1] / r)
-
-        f = open("test_dat/simul_badvol.dat", 'a')
-        f.write("{0}\n".format(badvol))
-        f.close()
 
     for cap in caps:
 
@@ -70,6 +69,15 @@ for r_i, r in enumerate(rad):
         elif b:
                 badvol = spherical_cap(1 - b)
 
-        f = open("test_dat/simul_badvol.dat", 'a')
+        f = open("test_dat/mock_completeness/simul_edge_badvol_{0}.dat".format(r), 'a')
+        f.write("{0}\n".format(badvol))
+        f.close()
+
+    for pickle in pickles:
+        pass
+
+        badvol = inty(pickle[0] / r, pickle[1] / r)[0]
+
+        f = open("test_dat/mock_completeness/simul_edge_badvol_{0}.dat".format(r), 'a')
         f.write("{0}\n".format(badvol))
         f.close()
